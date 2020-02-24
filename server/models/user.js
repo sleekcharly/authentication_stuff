@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
-const SALT = 10;
+const SALT_I = 10;
 const jwt = require('jsonwebtoken');
 
 const userSchema = mongoose.Schema({
@@ -10,32 +10,31 @@ const userSchema = mongoose.Schema({
         trim: true,
         unique: 1
     },
-
-    password:{
+    password: {
         type: String,
         required: true,
-        minLength: 8
+        minlength: 8
     },
-
-    token: {
-        type: String,
+    token:{
+        type:String,
         required: true
     }
 });
+
 
 userSchema.pre('save', function(next){
     var user = this;
 
     if( user.isModified('password')){
-        bcrypt.genSalt(SALT, function(err, salt) {
+        bcrypt.genSalt(SALT_I,function(err, salt){
             if(err) return next(err);
     
-            bcrypt.hash(user.password, salt, function(err, hash){
+            bcrypt.hash(user.password,salt,function(err, hash){
                 if(err) return next(err);
                 user.password = hash;
                 next();
-            });
-        });
+            })
+        })
     } else {
         next();
     }
@@ -43,23 +42,43 @@ userSchema.pre('save', function(next){
 
 userSchema.methods.comparePassword = function(candidatePassword, cb){
     var user = this;
-    bcrypt.compare(candidatePassword, user.password, function(err, isMatch){
+    bcrypt.compare(candidatePassword,user.password,function(err, isMatch){
         if(err) return cb(err);
-        cb(null, isMatch);
+        cb(null,isMatch);
     });
 }
 
 userSchema.methods.generateToken = function(cb){
     var user = this;
-    let token = jwt.sign(user._id.toString(), 'supersecret');
+    let token = jwt.sign(user._id.toHexString(),'supersecret');
 
     user.token = token;
-    user.save(function(err, user){
+    user.save(function(err,user){
         if(err) return cb(err);
-        cb(null, user);
-    });
+        cb(null,user);
+    })
 }
 
-const User = mongoose.model('User', userSchema);
+userSchema.statics.findByToken = function(token,cb){
+    var user = this;
+    jwt.verify(token,'supersecret',(err,decode)=>{
+        if(err) return cb(err);
+        user.findOne({'_id': decode,'token':token},(err,user)=>{
+            if(err) return cb(err);
+            cb(null, user)
+        })
+    })
+}
 
-module.exports = { User }
+userSchema.methods.deleteToken = function(token,cb){
+    var user = this;
+
+    user.updateOne({$unset: { token: 1 }},(err,user)=>{
+        if(err) return cb(err);
+        cb(null,user);
+    })
+}
+
+
+const User = mongoose.model('User',userSchema);
+module.exports = { User };
