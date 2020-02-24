@@ -5,8 +5,13 @@ const bcrypt = require('bcrypt');
 const cookieParser = require('cookie-parser');
 const app = express();
 
+//admin_user10
+//mC94jNwJBw7knwT1
 
-mongoose.connect('mongodb://localhost:27017/AuthApp',{
+// mongodb+srv://admin_user10:mC94jNwJBw7knwT1@cluster0-ohkht.mongodb.net/test?retryWrites=true&w=majority
+
+
+mongoose.connect('mongodb+srv://admin_user10:mC94jNwJBw7knwT1@cluster0-ohkht.mongodb.net/test?retryWrites=true&w=majority',{
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
