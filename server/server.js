@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 
 const app = express();
 
@@ -30,6 +31,23 @@ app.post('/api/user', (req, res) => {
         if(err) res.status(400).send(err);
         res.status(200).send(doc);
     });
+});
+
+app.post('/api/user/login', (req, res) => {
+    User.findOne({'email': req.body.email}, (err, user) => {
+        if(!user) return res.json({message: 'User not found'});
+
+        user.comparePassword(req.body.password, function(err, isMatch){
+            if(err) throw err;
+            if(!isMatch) return res.status(400).json({
+                message: 'Wrong password'
+            })
+            user.generateToken((err, user) => {
+                if(err) return res.status(400).send(err);
+                res.cookie('Auth', user.token).send('ok');
+            });
+        })
+    })
 })
 
 
